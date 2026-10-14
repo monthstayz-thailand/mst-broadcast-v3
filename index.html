@@ -283,37 +283,13 @@ let adminUnlocked = false;
 
 const TEAM = ['Hari','Suprith','Srinath','View','Ryan'];
 
-function getAssignee(c, idx) {
-  const lar = c.lar || ''; // latest arrival date e.g. "2024-09-01"
-  const ear = c.ear || ''; // earliest arrival date
-
-  // Rule 1: Only 2023 trips (latest arrival before 2024) → View
-  if (lar && lar < '2024-01-01') return 'View';
-
-  // Rule 2: Has trips from April 2025 onwards → Suprith
-  if (lar >= '2025-04-01') return 'Suprith';
-
-  // Rule 3: Has arrival dates from Dec 2023 onwards → Hari or Srinath (alternate)
-  if (lar >= '2023-12-01') {
-    // Alternate between Hari and Srinath based on index
-    return idx % 2 === 0 ? 'Hari' : 'Srinath';
-  }
-
-  // Default: round robin across all 4
-  return ['Hari','Suprith','Srinath','View'][idx % 4];
-}
-
 function assignAll() {
-  let hariSrinathIdx = 0;
+  // Pure round-robin across all 5 team members for v3
   D.forEach((c, i) => {
     if (!ST[c.id]) ST[c.id] = {};
-    if (!ST[c.id].assignee) {
-      const assignee = getAssignee(c, hariSrinathIdx);
-      ST[c.id].assignee = assignee;
-      if (assignee === 'Hari' || assignee === 'Srinath') hariSrinathIdx++;
-    }
+    ST[c.id].assignee = TEAM[i % TEAM.length];
   });
-  try { localStorage.setItem('mst_bc4_v3', JSON.stringify(ST)); } catch(e) {}
+  try { localStorage.setItem('mst_bc4_v3b', JSON.stringify(ST)); } catch(e) {}
 }
 
 function saveGsUrl(){
@@ -582,7 +558,7 @@ async function refreshTrips() {
 
 let ST={};
 // v2: only load state that belongs to this version
-try{const s=localStorage.getItem('mst_bc4_v3');if(s)ST=JSON.parse(s);}catch(e){}
+try{const s=localStorage.getItem('mst_bc4_v3b');if(s)ST=JSON.parse(s);}catch(e){}
 
 // ── Load shared state from Google Sheets on startup ─────────────────────
 async function loadSharedState(){
@@ -604,7 +580,7 @@ async function loadSharedState(){
       if(row.dateSent)ST[row.crmId].bd=row.dateSent;
       if(row.assignee)ST[row.crmId].assignee=row.assignee;
     });
-    try{localStorage.setItem('mst_bc4_v3',JSON.stringify(ST));}catch(e){}
+    try{localStorage.setItem('mst_bc4_v3b',JSON.stringify(ST));}catch(e){}
     render();
     us();
     console.log('Shared state loaded from Sheets: '+rows.length+' rows');
@@ -618,7 +594,7 @@ let DIRTY = new Set();
 function sv(id,k,v){
   if(!ST[id])ST[id]={};ST[id][k]=v;
   DIRTY.add(id);
-  try{localStorage.setItem('mst_bc4_v3',JSON.stringify(ST));}catch(e){}
+  try{localStorage.setItem('mst_bc4_v3b',JSON.stringify(ST));}catch(e){}
   const n=document.getElementById('sn');n.classList.add('show');
   clearTimeout(n._t);n._t=setTimeout(()=>n.classList.remove('show'),2000);
   us();
@@ -728,7 +704,7 @@ function render(){
 
 function tog(id){
   const st=ST[id]||{};st.open=!st.open;ST[id]=st;
-  try{localStorage.setItem('mst_bc4_v3',JSON.stringify(ST));}catch(e){}
+  try{localStorage.setItem('mst_bc4_v3b',JSON.stringify(ST));}catch(e){}
   const p=document.getElementById('tp-'+id);const t=document.getElementById('tt-'+id);
   if(p)p.classList.toggle('open',st.open);if(t)t.classList.toggle('open',st.open);
 }
