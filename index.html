@@ -68,7 +68,7 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(-
 .snote.show{opacity:1}
 
 /* TABLE HEADER */
-.th{display:grid;grid-template-columns:42px 155px 85px 115px 90px 90px 65px 100px 50px 95px 50px 80px 60px 150px;padding:7px 32px;background:linear-gradient(90deg,#0a6e6e,#0e9e9e);border-bottom:none;font-size:9px;font-weight:600;color:#ffffff;letter-spacing:.12em;text-transform:uppercase;position:sticky;top:89px;z-index:50}
+.th{display:grid;grid-template-columns:42px 155px 85px 115px 90px 90px 65px 130px 100px 50px 95px 50px 80px 60px 150px;padding:7px 32px;background:linear-gradient(90deg,#0a6e6e,#0e9e9e);border-bottom:none;font-size:9px;font-weight:600;color:#ffffff;letter-spacing:.12em;text-transform:uppercase;position:sticky;top:89px;z-index:50}
 .th>div{padding:0 5px}
 
 /* ROWS */
@@ -85,7 +85,7 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(-
 .nac-chk{display:inline-block;background:#fef3c7;color:#92400e;border:1.5px solid #f59e0b;border-radius:4px;padding:1px 7px;font-size:13px;font-weight:700}
 .nac-unchk{display:inline-block;color:var(--text3);font-size:12px;text-align:center}
 
-.rm{display:grid;grid-template-columns:42px 155px 85px 115px 90px 90px 65px 100px 50px 95px 50px 80px 60px 150px;align-items:center;padding:0 32px;min-height:50px;cursor:pointer}
+.rm{display:grid;grid-template-columns:42px 155px 85px 115px 90px 90px 65px 130px 100px 50px 95px 50px 80px 60px 150px;align-items:center;padding:0 32px;min-height:50px;cursor:pointer}
 .rm>div{padding:0 5px}
 
 .rk{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:600;border:1.5px solid var(--border2);color:var(--text3);background:var(--bg);flex-shrink:0}
@@ -123,6 +123,10 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(-
 .cbl input[type=checkbox]:checked::after{content:'';position:absolute;left:2px;top:1px;width:7px;height:4px;border-left:1.5px solid #fff;border-bottom:1.5px solid #fff;transform:rotate(-45deg)}
 .sl{color:var(--ok);font-weight:500}
 .ul{color:var(--text3)}
+
+/* INQUIRY STAGE */
+.stbadge{display:inline-block;font-size:9px;font-weight:700;border:1px solid;border-radius:3px;padding:1px 5px;margin:1px 3px 1px 0;white-space:nowrap}
+.stnone{font-size:10px;color:var(--text3);font-style:italic}
 
 /* TRIPS PANEL */
 .tp{display:none;padding:0 32px 12px}
@@ -244,7 +248,10 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(-
     <option value="actionable">Actionable only (no sent, no access, no left group)</option>
     <option value="optout">Opted out customers</option>
   </select>
-  <div style="margin-left:auto;display:flex;align-items:center;gap:8px;flex-shrink:0"><button class="ebtn" onclick="testSheetConnection()" style="background:#fff4ee;border-color:#f5c0a0;color:#c85010" title="Test if Google Sheets connection is working">🔌 Test Sync</button><button id="sync-all-btn" class="ebtn" onclick="syncAllToSheets()" style="background:var(--teal-bg);border-color:var(--teal-border);color:var(--teal)" title="Push all sent records to Google Sheets">☁ Sync All</button><button class="ebtn" onclick="exportCSV()">
+  <select class="fsel" id="fst" onchange="render()" title="Current inquiry stage of the customer's trip(s)">
+    <option value="">All stages</option>
+  </select>
+  <div style="margin-left:auto;display:flex;align-items:center;gap:8px;flex-shrink:0"><button class="ebtn" onclick="testSheetConnection()" style="background:#fff4ee;border-color:#f5c0a0;color:#c85010" title="Test if Google Sheets connection is working">🔌 Test Sync</button><button id="sync-all-btn" class="ebtn" onclick="syncAllToSheets()" style="background:var(--teal-bg);border-color:var(--teal-border);color:var(--teal)" title="Push all sent records to Google Sheets">☁ Sync All</button><button class="ebtn" onclick="copyGroups()" title="Copy the trip group names of the customers shown below (only open trips have a group name loaded)">📋 Copy group names</button><button class="ebtn" onclick="exportCSV()">
     <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
     Export CSV
   </button></div>
@@ -258,7 +265,7 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(-
 
 <div class="th">
   <div></div><div>Customer</div><div>Cust ID</div><div>Phone Number</div><div>Revenue</div><div>Channel</div>
-  <div>Trips</div><div>Assignee 🔒</div><div>No Access</div><div>Broadcast Date</div><div>Sent ✓</div><div>Left Group</div><div>Opt Out</div><div>Notes</div>
+  <div>Trips</div><div>Stage</div><div>Assignee 🔒</div><div>No Access</div><div>Broadcast Date</div><div>Sent ✓</div><div>Left Group</div><div>Opt Out</div><div>Notes</div>
 </div>
 
 <div class="list" id="list"></div>
@@ -424,7 +431,7 @@ async function loadCustomersFromAirtable() {
   if (statusEl) statusEl.textContent = '⏳ Loading customers from Airtable...';
   try {
     let all = [], offset = null, page = 0;
-    const fieldNames = ['Full Name','Customer ID','Phone number','Contact Channel','No of trips','Revenue','Customer journey','Arrival Date (from customer journeys)','Checkout Date (from customer journeys)','Customer opt out','Customer left group'];
+    const fieldNames = ['Full Name','Customer ID','Phone number','Contact Channel','No of trips','Revenue','Customer journey','Arrival Date (from customer journeys)','Checkout Date (from customer journeys)','Customer opt out','Customer left group','Inquiry status (from Customer journey)'];
     const fieldParams = fieldNames.map(f => 'fields[]=' + encodeURIComponent(f)).join('&');
     do {
       page++;
@@ -459,6 +466,7 @@ async function loadCustomersFromAirtable() {
         tj:  Array.isArray(f['Customer journey']) ? f['Customer journey'] : [],
         oo:  f['Customer opt out'] === true,  // opt out flag
         lg_at: f['Customer left group'] === true,  // left group in Airtable
+        ist: Array.isArray(f['Inquiry status (from Customer journey)']) ? f['Inquiry status (from Customer journey)'] : [], // inquiry status of every linked trip
         lar: latestAr,   // latest arrival date across all trips
         ear: earliestAr  // earliest arrival date
       };
@@ -489,6 +497,9 @@ async function loadCustomersFromAirtable() {
 
     us(); // update header stats
     console.log('✓ Loaded', D.length, 'customers from Airtable');
+    await loadOpenTripsFromAirtable(); // inquiry stages + group names of open trips
+    fillStageFilter();
+    render();
   } catch(err) {
     if (statusEl) statusEl.textContent = '⚠ Customer load failed: ' + err.message;
     console.error('Customer load error:', err);
@@ -505,7 +516,7 @@ async function fetchTripsForCustomer(crmId) {
   const tripIds = (c && c.tj && c.tj.length) ? c.tj : [];
   if (!tripIds.length) { T[crmId] = []; return []; }
 
-  const fieldNames = ['Trip Name','Customer group naming','Arrival Date','Checkout Date','Entire trip cost','Stage','Channel contact'];
+  const fieldNames = ['Trip Name','Customer group naming','Arrival Date','Checkout Date','Entire trip cost','Stage','Channel contact','Inquiry status'];
   const fieldParams = fieldNames.map(f => 'fields[]=' + encodeURIComponent(f)).join('&');
   const allTrips = [];
 
@@ -529,6 +540,7 @@ async function fetchTripsForCustomer(crmId) {
           co:     String(f['Checkout Date'] || ''),
           cost:   Number(f['Entire trip cost'] || 0),
           status: String(f['Stage'] || ''),
+          inq:    String(f['Inquiry status'] || ''),
           ch:     String(f['Channel contact'] || '')
         });
       }
@@ -548,6 +560,98 @@ async function fetchTripsForCustomer(crmId) {
 async function loadTripsFromAirtable() {
   // No-op: trips now load on-demand per customer
   tripsLoaded = true;
+}
+
+// ── Inquiry stages ──────────────────────────────────────────────────────
+// Pipeline order of Master Trips → 'Inquiry status'
+const STAGES = ['Inquiry','Sent for pricing','Pricing to be done','Price calculation done','Waiting price approval','Price approved','Price sent to customer','Invoice to be prepared','Sent Invoice','Paid and confirmed','Checked-In','Trip dates changed','Trip completed','Trip cancelled','Dead'];
+const CLOSED_STAGES = ['Trip completed','Trip cancelled','Dead'];
+let OPEN = {};             // CRM record id → open trips [{st, gn, ar}]
+let openTripsLoaded = false;
+
+// Open trips = every trip whose stage is not completed / cancelled / dead (a few hundred, so load them all once)
+async function loadOpenTripsFromAirtable() {
+  const formula = "AND({Inquiry status}!='', {Inquiry status}!='Trip completed', {Inquiry status}!='Trip cancelled', {Inquiry status}!='Dead')";
+  const fieldParams = ['Inquiry status','Customer group naming','Arrival Date','CRM contact'].map(f => 'fields[]=' + encodeURIComponent(f)).join('&');
+  const map = {};
+  let offset = null, page = 0;
+  try {
+    do {
+      page++;
+      let url = 'https://api.airtable.com/v0/' + AT_BASE + '/' + AT_TRIPS_TABLE
+        + '?pageSize=100&filterByFormula=' + encodeURIComponent(formula) + '&' + fieldParams;
+      if (offset) url += '&offset=' + offset;
+      const resp = await fetch(url, { headers: { 'Authorization': 'Bearer ' + AT_PAT } });
+      if (!resp.ok) throw new Error('Open trips fetch error: ' + resp.status);
+      const data = await resp.json();
+      for (const rec of (data.records || [])) {
+        const f = rec.fields;
+        const trip = { st: String(f['Inquiry status'] || ''), gn: String(f['Customer group naming'] || ''), ar: String(f['Arrival Date'] || '') };
+        (f['CRM contact'] || []).forEach(id => { (map[id] = map[id] || []).push(trip); });
+      }
+      offset = data.offset || null;
+    } while (offset && page < 50);
+    OPEN = map;
+    openTripsLoaded = true;
+    console.log('✓ Loaded open trips for', Object.keys(map).length, 'customers');
+  } catch(err) {
+    console.error('Open trips load error:', err);
+  }
+}
+
+// Current stage(s) of a customer: stages of their open trips; if none open, their closed outcome
+// (Trip completed > Trip cancelled > Dead). [] = no trip found.
+function custStages(c) {
+  const byPipeline = (a,b) => STAGES.indexOf(a) - STAGES.indexOf(b);
+  if (!openTripsLoaded) return [...new Set(c.ist)].sort(byPipeline); // open trips not loaded (yet / failed): show every stage
+  const o = OPEN[c.id];
+  if (o && o.length) return [...new Set(o.map(t => t.st))].sort(byPipeline);
+  const closed = CLOSED_STAGES.find(s => c.ist.includes(s));
+  return closed ? [closed] : [];
+}
+
+function stageColor(s) {
+  const map = {
+    'Inquiry':'#6b7280','Sent for pricing':'#2563eb','Pricing to be done':'#ca8a04','Price calculation done':'#0d9488',
+    'Waiting price approval':'#2563eb','Price approved':'#ea580c','Price sent to customer':'#7c3aed',
+    'Invoice to be prepared':'#0891b2','Sent Invoice':'#b45309','Paid and confirmed':'#c2410c','Checked-In':'#16a34a',
+    'Trip dates changed':'#d97706','Trip completed':'#15803d','Trip cancelled':'#dc2626','Dead':'#9f1239'
+  };
+  return map[s] || '#6b7280';
+}
+
+function stageBadge(s) {
+  const sc = stageColor(s);
+  return '<span class="stbadge" style="color:'+sc+';border-color:'+sc+'">'+s+'</span>';
+}
+
+function fillStageFilter() {
+  const sel = document.getElementById('fst');
+  if (!sel) return;
+  const cur = sel.value;
+  const counts = {}; let none = 0;
+  D.forEach(c => { const st = custStages(c); if (!st.length) none++; st.forEach(s => counts[s] = (counts[s]||0) + 1); });
+  const extra = Object.keys(counts).filter(s => !STAGES.includes(s));
+  sel.innerHTML = '<option value="">All stages</option>'
+    + STAGES.concat(extra).filter(s => counts[s]).map(s => '<option value="'+s+'">'+s+' ('+counts[s]+')</option>').join('')
+    + '<option value="__none__">— No trip found ('+none+')</option>';
+  sel.value = cur;
+}
+
+// Copy group names of the customers currently shown (open trips only; respects the stage filter)
+async function copyGroups() {
+  const fst = document.getElementById('fst').value;
+  const names = []; let noGroup = 0;
+  filteredCustomers().forEach(c => {
+    const trips = (OPEN[c.id] || []).filter(t => t.gn && (!fst || t.st === fst));
+    if (!trips.length) { noGroup++; return; }
+    trips.forEach(t => names.push(t.gn));
+  });
+  if (!names.length) { alert('No group names to copy.\n\nGroup names are only loaded for open trips (not completed / cancelled / dead). Expand a customer row to see the group names of their past trips.'); return; }
+  const text = [...new Set(names)].join('\n');
+  try { await navigator.clipboard.writeText(text); }
+  catch(e) { prompt('Copy the group names below:', text.replace(/\n/g, ', ')); return; }
+  alert('Copied ' + new Set(names).size + ' group name(s) to the clipboard.' + (noGroup ? '\n' + noGroup + ' customer(s) in this view have no open trip, so no group name was copied for them.' : ''));
 }
 
 async function refreshTrips() {
@@ -658,18 +762,20 @@ function renderTrips(c, trips) {
     const grp = t.gn || '<span style="color:var(--text3);font-style:italic">No group name</span>';
     const sc = statusColor(t.status);
     const statusHtml = t.status ? '<span style="font-size:9px;font-weight:700;color:'+sc+';border:1px solid '+sc+';border-radius:3px;padding:1px 5px;margin-left:6px;white-space:nowrap">'+t.status+'</span>' : '';
+    const inqHtml = t.inq ? ' '+stageBadge(t.inq) : '';
     const chHtml = t.ch ? '<span style="font-size:9px;color:#888;margin-left:5px">'+t.ch+'</span>' : '';
-    return '<div class="tr"><div class="tdot"></div><div class="tn"><div class="tgn">'+grp+statusHtml+chHtml+'</div><div class="tdt">'+a+(d?' → '+d:'')+(cost?' <span class="tc">'+cost+'</span>':'')+' </div></div></div>';
+    return '<div class="tr"><div class="tdot"></div><div class="tn"><div class="tgn">'+grp+inqHtml+statusHtml+chHtml+'</div><div class="tdt">'+a+(d?' → '+d:'')+(cost?' <span class="tc">'+cost+'</span>':'')+' </div></div></div>';
   }).join('');
 }
 
 
-function render(){
+function filteredCustomers(){
   const q=document.getElementById('q').value.toLowerCase();
   const fc=document.getElementById('fc').value;
   const fa=document.getElementById('fa').value;
   const fs=document.getElementById('fs').value;
-  const f=D.filter(c=>{
+  const fst=document.getElementById('fst').value;
+  return D.filter(c=>{
     const st=ST[c.id]||{};
     if(q&&!c.n.toLowerCase().includes(q))return false;
     if(fc==='__nochannel__'){
@@ -683,8 +789,14 @@ function render(){
     if(fs==='clg'       && !st.clg)                        return false;
     // Actionable: ALL THREE checkboxes must be empty
     if(fs==='actionable' && (st.sent || st.nac || st.clg)) return false;
+    if(fst==='__none__' && custStages(c).length)            return false;
+    if(fst && fst!=='__none__' && !custStages(c).includes(fst)) return false;
     return true;
   });
+}
+
+function render(){
+  const f=filteredCustomers();
   const list=document.getElementById('list');
   if(!f.length){list.innerHTML='<div class="empty">No customers match your filters.</div>';return;}
   list.innerHTML=f.map(c=>{
@@ -698,7 +810,7 @@ function render(){
     const nac=!!st.nac;
     const clg=!!st.clg;
     const notes=st.notes||'';
-    return`<div class="rw${c.oo?' opt-out':sent?' done':nac?' no-access':''}${clg?' left-group':''}" id="rw-${c.id}"><div class="rm" onclick="tog('${c.id}')"><div><span class="rk ${rc}">${rank}</span></div><div><div class="cn">${c.n}</div><div class="rbar"><div class="rfil" style="width:${pct}%"></div></div></div><div><div class="cidcell">${c.cid||'<span style=\"color:var(--text3)\">—</span>'}</div></div><div><div class="phcell">${c.ph||'<span style=\"color:var(--text3)\">—</span>'}</div></div><div><div class="rvn">${fr(c.r)}</div></div><div><span class="chbadge ${chc(c.ch)}">${c.ch==='—'?'—':c.ch}</span></div><div><div class="tt${open?' open':''}" id="tt-${c.id}"><span class="ar">▶</span> ${c.tc} trip${c.tc!==1?'s':''}</div></div><div onclick="event.stopPropagation()">${adminUnlocked ? `<select class="asel" onchange="sv('${c.id}','assignee',this.value)"><option value="">Assign…</option>${['Hari','Suprith','Srinath','View'].map(a=>`<option${st.assignee===a?' selected':''}>${a}</option>`).join('')}</select>` : `<div class="asel-locked">${st.assignee || '<span style=\"color:var(--text3)\">—</span>'}</div>`}</div><div onclick="event.stopPropagation()"><label class="cbl nac-label"><input type="checkbox"${nac?' checked':''} onchange="hna('${c.id}',this.checked)"><span class="${nac?'nac-chk':'nac-unchk'}">${nac?'✗':'—'}</span></label></div><div onclick="event.stopPropagation()"><input type="date" class="di" value="${toISO(st.bd||'')}" onchange="sv('${c.id}','bd',this.value)" title="Date broadcast sent"></div><div onclick="event.stopPropagation()"><label class="cbl"><input type="checkbox"${sent?' checked':''} onchange="hs('${c.id}',this.checked)"><span class="${sent?'sl':'ul'}">${sent?'Sent':'Mark'}</span></label></div><div onclick="event.stopPropagation()"><label class="cbl clg-label"><input type="checkbox"${clg?' checked':''} onchange="hclg('${c.id}',this.checked)"><span class="${clg?'clg-chk':'clg-unchk'}">${clg?'✓':'—'}</span></label></div><div onclick="event.stopPropagation()"><label class="cbl" style="justify-content:center" title="${c.oo?'Opted out':'Mark as opted out'}"><input type="checkbox"${c.oo?' checked':''} onchange="hoo('${c.id}',this.checked)"><span style="display:inline-block;padding:1px 6px;border-radius:4px;font-size:12px;${c.oo?'background:#f3e8ff;color:#a855f7;font-weight:bold':'color:#aaa'}">${c.oo?'✗':'—'}</span></label></div><div onclick="event.stopPropagation()"><input type="text" class="notes-inline" placeholder="Add noteâ¦" value="${(st.notes||''). replace(/&/g,'&amp;').replace(/"/g,'&quot;')}" onchange="sn('${c.id}',this.value)"></div></div><div class="tp${open?' open':''}" id="tp-${c.id}"><div class="ti" id="ti-${c.id}"><div style="padding:6px 0;font-size:11px;color:var(--text3);font-style:italic"><em style='font-size:11px;color:#aaa;cursor:pointer' onclick='loadTripsForRow("${c.id}",this)'>▶ Click to load trips</em></div><div class="notes-wrap"><div class="notes-label">💬 Notes <span class="notes-saved" id="ns-${c.id}">Saved ✓</span></div><textarea class="notes-ta" placeholder="Add notes about this customer or broadcast…" onchange="sn('${c.id}',this.value)">${st.notes||''}</textarea></div></div></div></div>`;
+    return`<div class="rw${c.oo?' opt-out':sent?' done':nac?' no-access':''}${clg?' left-group':''}" id="rw-${c.id}"><div class="rm" onclick="tog('${c.id}')"><div><span class="rk ${rc}">${rank}</span></div><div><div class="cn">${c.n}</div><div class="rbar"><div class="rfil" style="width:${pct}%"></div></div></div><div><div class="cidcell">${c.cid||'<span style=\"color:var(--text3)\">—</span>'}</div></div><div><div class="phcell">${c.ph||'<span style=\"color:var(--text3)\">—</span>'}</div></div><div><div class="rvn">${fr(c.r)}</div></div><div><span class="chbadge ${chc(c.ch)}">${c.ch==='—'?'—':c.ch}</span></div><div><div class="tt${open?' open':''}" id="tt-${c.id}"><span class="ar">▶</span> ${c.tc} trip${c.tc!==1?'s':''}</div></div><div>${(()=>{const ss=custStages(c);const gns=(OPEN[c.id]||[]).map(t=>t.gn).filter(Boolean).join('\n');return ss.length?`<div title="${gns.replace(/"/g,'&quot;')}">${ss.map(stageBadge).join('')}</div>`:'<span class="stnone">No trip found</span>';})()}</div><div onclick="event.stopPropagation()">${adminUnlocked ? `<select class="asel" onchange="sv('${c.id}','assignee',this.value)"><option value="">Assign…</option>${['Hari','Suprith','Srinath','View'].map(a=>`<option${st.assignee===a?' selected':''}>${a}</option>`).join('')}</select>` : `<div class="asel-locked">${st.assignee || '<span style=\"color:var(--text3)\">—</span>'}</div>`}</div><div onclick="event.stopPropagation()"><label class="cbl nac-label"><input type="checkbox"${nac?' checked':''} onchange="hna('${c.id}',this.checked)"><span class="${nac?'nac-chk':'nac-unchk'}">${nac?'✗':'—'}</span></label></div><div onclick="event.stopPropagation()"><input type="date" class="di" value="${toISO(st.bd||'')}" onchange="sv('${c.id}','bd',this.value)" title="Date broadcast sent"></div><div onclick="event.stopPropagation()"><label class="cbl"><input type="checkbox"${sent?' checked':''} onchange="hs('${c.id}',this.checked)"><span class="${sent?'sl':'ul'}">${sent?'Sent':'Mark'}</span></label></div><div onclick="event.stopPropagation()"><label class="cbl clg-label"><input type="checkbox"${clg?' checked':''} onchange="hclg('${c.id}',this.checked)"><span class="${clg?'clg-chk':'clg-unchk'}">${clg?'✓':'—'}</span></label></div><div onclick="event.stopPropagation()"><label class="cbl" style="justify-content:center" title="${c.oo?'Opted out':'Mark as opted out'}"><input type="checkbox"${c.oo?' checked':''} onchange="hoo('${c.id}',this.checked)"><span style="display:inline-block;padding:1px 6px;border-radius:4px;font-size:12px;${c.oo?'background:#f3e8ff;color:#a855f7;font-weight:bold':'color:#aaa'}">${c.oo?'✗':'—'}</span></label></div><div onclick="event.stopPropagation()"><input type="text" class="notes-inline" placeholder="Add noteâ¦" value="${(st.notes||''). replace(/&/g,'&amp;').replace(/"/g,'&quot;')}" onchange="sn('${c.id}',this.value)"></div></div><div class="tp${open?' open':''}" id="tp-${c.id}"><div class="ti" id="ti-${c.id}"><div style="padding:6px 0;font-size:11px;color:var(--text3);font-style:italic"><em style='font-size:11px;color:#aaa;cursor:pointer' onclick='loadTripsForRow("${c.id}",this)'>▶ Click to load trips</em></div><div class="notes-wrap"><div class="notes-label">💬 Notes <span class="notes-saved" id="ns-${c.id}">Saved ✓</span></div><textarea class="notes-ta" placeholder="Add notes about this customer or broadcast…" onchange="sn('${c.id}',this.value)">${st.notes||''}</textarea></div></div></div></div>`;
   }).join('');
 }
 
@@ -964,8 +1076,8 @@ function launchConfetti(){
 }
 
 function exportCSV(){
-  const rows=[['Rank','Customer Name','Cust ID','Phone','Revenue (THB)','Channel','Trip Count','Assignee','No Access','Broadcast Date','Broadcast Sent','Notes']];
-  D.forEach((c,i)=>{const st=ST[c.id]||{};rows.push([i+1,c.n,c.cid||'',c.ph||'',c.r,c.ch,c.tc,st.assignee||'',st.nac?'Yes':'No',st.bd||'',st.sent?'Yes':'No',st.notes||'']);});
+  const rows=[['Rank','Customer Name','Cust ID','Phone','Revenue (THB)','Channel','Trip Count','Assignee','No Access','Broadcast Date','Broadcast Sent','Notes','Inquiry Stage','Open Trip Groups']];
+  D.forEach((c,i)=>{const st=ST[c.id]||{};rows.push([i+1,c.n,c.cid||'',c.ph||'',c.r,c.ch,c.tc,st.assignee||'',st.nac?'Yes':'No',st.bd||'',st.sent?'Yes':'No',st.notes||'',custStages(c).join(' | ')||'No trip found',(OPEN[c.id]||[]).map(t=>t.gn).filter(Boolean).join(' | ')]);});
   const csv=rows.map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
   const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
   a.download='monthstayz_broadcast_'+new Date().toISOString().slice(0,10)+'.csv';a.click();
